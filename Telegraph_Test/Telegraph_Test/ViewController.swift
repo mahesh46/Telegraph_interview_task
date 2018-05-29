@@ -12,7 +12,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
 
     var articles: [CollectionViewModel] =  (UIApplication.shared.delegate as! AppDelegate).articles
     @IBOutlet weak var tableView: UITableView!
-    
+        let  imageCache = NSCache<AnyObject, AnyObject>()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -54,16 +54,24 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         cell.descriptionLabel.text = articleViewModel.description
         cell.synopsisTextView.text = articleViewModel.synopsis
         cell.imageView?.image = UIImage()
-       
-        if let url = URL(string: articleViewModel.pictureUrl! ) {
+              if let url = URL(string: articleViewModel.pictureUrl! ) {
+                
+                if let image =    self.imageCache.object(forKey:  url as AnyObject  )  as? UIImage {
+              cell.pictureImageView?.image = image
+          }  else {
+  
         
         DispatchQueue.global().async {
             guard  let data = try? Data(contentsOf: url) else {return}
+             let image =   UIImage(data: data)
+            self.imageCache.setObject(image!, forKey: url as AnyObject )
+
             DispatchQueue.main.async {
-                cell.pictureImageView?.image = UIImage(data: data)
+                cell.pictureImageView?.image = image
                }
             
            }
+            }
         } else {
             cell.pictureImageView?.image  = UIImage()
         }
@@ -79,16 +87,27 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         cell.twitterLabel.text = "Twitter: " + (author?.twitter)!
         cell.nameLabel.text = "Author: " +  (author?.name)!
         
-        if let url = URL(string: (author?.headshot)! ) {
         cell.headShotImage.layer.cornerRadius = 25
         cell.headShotImage.layer.masksToBounds = true
-            DispatchQueue.global().async {
-                guard     let data = try? Data(contentsOf: url)  else {return}
-                DispatchQueue.main.async {
-                    cell.headShotImage?.image = UIImage(data: data)
-                }
-                
+        if let url = URL(string: (author?.headshot)! ) {
+                 if let image =    self.imageCache.object(forKey:  url as AnyObject  )  as? UIImage {
+           cell.headShotImage?.image
+                 } else {
+               
+                    DispatchQueue.global().async {
+                        guard     let data = try? Data(contentsOf: url)  else {return}
+                        let image =   UIImage(data: data)
+                        self.imageCache.setObject(image!, forKey: url as AnyObject )
+                        DispatchQueue.main.async {
+                            cell.headShotImage?.image = image
+                        }
+                        
+                    }
+                    
             }
+       
+            
+            
         } else {
              cell.headShotImage?.image  = UIImage()
         }
